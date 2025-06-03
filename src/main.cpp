@@ -156,7 +156,7 @@ bool checkthing(){
 
 bool overlapcheck(){
     for(unsigned char i=0;i<4;i++)for(unsigned char j=0;j<4;j++){
-            if(blocks[currentblock][direction][j][i]!=0&&array[i+blockx][j+blocky]!=0)return true;
+            if(blocks[currentblock][direction][j][i]!=0&&(array[i+blockx][j+blocky]!=0||i+blockx>9||i+blockx<0))return true;
             }
     return false;
 }
