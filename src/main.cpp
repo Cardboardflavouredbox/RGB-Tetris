@@ -160,6 +160,27 @@ bool overlapcheck(){
             }
     return false;
 }
+bool turncheck(){
+    bool left=false,right=false;
+    for(unsigned char i=0;i<4;i++)for(unsigned char j=0;j<4;j++){
+            if(blocks[currentblock][direction][j][i]!=0&&(array[i+blockx][j+blocky]!=0||i+blockx>9||i+blockx<0)){if(i<2)left=true;else right=true;}
+            }
+    while(left&&!right){
+        left=false;right=false;
+        blockx++;
+        for(unsigned char i=0;i<4;i++)for(unsigned char j=0;j<4;j++){
+            if(blocks[currentblock][direction][j][i]!=0&&(array[i+blockx][j+blocky]!=0||i+blockx>9||i+blockx<0)){if(i<2)left=true;else right=true;}
+            }
+    }
+    while(!left&&right){
+        left=false;right=false;
+        blockx--;
+        for(unsigned char i=0;i<4;i++)for(unsigned char j=0;j<4;j++){
+            if(blocks[currentblock][direction][j][i]!=0&&(array[i+blockx][j+blocky]!=0||i+blockx>9||i+blockx<0)){if(i<2)left=true;else right=true;}
+            }
+    }
+    return left&&right;
+}
 
 class TileMap : public sf::Drawable, public sf::Transformable
 {
@@ -187,12 +208,7 @@ public:
                 triangles[4].position = sf::Vector2f(420+(i + 1) * tileSize.x, j * tileSize.y);
                 triangles[5].position = sf::Vector2f(420+(i + 1) * tileSize.x, (j + 1) * tileSize.y);
 
-                triangles[0].color = CGAcolor(array[i][j]);
-                triangles[1].color = CGAcolor(array[i][j]);
-                triangles[2].color = CGAcolor(array[i][j]);
-                triangles[3].color = CGAcolor(array[i][j]);
-                triangles[4].color = CGAcolor(array[i][j]);
-                triangles[5].color = CGAcolor(array[i][j]);
+                for(unsigned char k=0;k<6;k++)triangles[k].color = CGAcolor(array[i][j]);
             }
         }
 
@@ -283,8 +299,14 @@ int main()
         keypresscheck(sf::Keyboard::Key::W,&upkey);
         keypresscheck(sf::Keyboard::Key::S,&downkey);
 
-        if(leftturn=='2'){direction--;if(direction<0)direction=3;}
-        else if(rightturn=='2'){direction++;if(direction>3)direction=0;}
+        if(leftturn=='2'){
+            direction--;if(direction<0)direction=3;
+            if(turncheck()){direction++;if(direction>3)direction=0;}
+            }
+        else if(rightturn=='2'){
+            direction++;if(direction>3)direction=0;
+            if(turncheck()){direction--;if(direction<0)direction=3;}
+            }
         
         if(leftkey=='2'){blockx--;if(overlapcheck())blockx++;}
         if(rightkey=='2'){blockx++;if(overlapcheck())blockx--;}
@@ -323,6 +345,7 @@ int main()
         if(check){for(unsigned char i=0;i<4;i++)for(unsigned char j=0;j<4;j++)if(blocks[currentblock][direction][j][i]!=0)array[i+blockx][j+blocky]=0;}
         else {
             blocky=0;
+            blockfallwait=blockfallframes;
             if(currentblocknum>5){currentblocknum=0;std::shuffle(std::begin(blocklist), std::end(blocklist),std::mt19937(std::random_device()()));}
             else currentblocknum++;
             currentblock=blocklist[currentblocknum];
