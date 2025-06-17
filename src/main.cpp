@@ -3,8 +3,19 @@
 #include <random>
 #include <algorithm>
 
+
+std::random_device rd;
+std::mt19937 gen(rd());
+
+struct blockclass{
+    bool block=false;
+    sf::Color color;
+};
+
 bool screenfocused=true;
-unsigned char array[10][20]={},currentblock=0,blocklist[7]={0,1,2,3,4,5,6},currentblocknum=0,holdblock=255,
+blockclass array[10][20]={};
+sf::Color currentcolor,holdcolor;
+unsigned char currentblock=0,blocklist[7]={0,1,2,3,4,5,6},currentblocknum=0,holdblock=255,
     blocks[7][4][4][4]={
         {
         {
@@ -135,12 +146,6 @@ unsigned char array[10][20]={},currentblock=0,blocklist[7]={0,1,2,3,4,5,6},curre
     };
 short direction=0,blockx=0,blocky=0,blockfallwait=45,blockfallframes=45;
 
-sf::Color CGAcolor(unsigned char color){
-    return sf::Color(170*((color/4)%2) + 85*(color/8), 
-    (1-(color==6)/3.0)*170*((color/2)%2) + 85*(color/8),
-    170*(color%2) + 85*(color/8));
-}
-
 void keypresscheck(sf::Keyboard::Key keycode,char *key){
     if(screenfocused&&sf::Keyboard::isKeyPressed(keycode)){if(*key=='0')*key='2';else if(*key=='2')*key='1';}else *key='0';
 }
@@ -149,34 +154,34 @@ bool checkthing(){
     for(unsigned char i=0;i<4;i++)for(unsigned char j=0;j<4;j++){
                 if(blocks[currentblock][direction][j][i]!=0){
                 if(j+blocky>18)return false;
-                if(array[i+blockx][j+blocky+1]!=0)return false;}
+                if(array[i+blockx][j+blocky+1].block)return false;}
             }
     return true;
 }
 
 bool overlapcheck(){
     for(unsigned char i=0;i<4;i++)for(unsigned char j=0;j<4;j++){
-            if(blocks[currentblock][direction][j][i]!=0&&(array[i+blockx][j+blocky]!=0||i+blockx>9||i+blockx<0))return true;
+            if(blocks[currentblock][direction][j][i]!=0&&(array[i+blockx][j+blocky].block||i+blockx>9||i+blockx<0))return true;
             }
     return false;
 }
 bool turncheck(){
     bool left=false,right=false;
     for(unsigned char i=0;i<4;i++)for(unsigned char j=0;j<4;j++){
-            if(blocks[currentblock][direction][j][i]!=0&&(array[i+blockx][j+blocky]!=0||i+blockx>9||i+blockx<0)){if(i<2)left=true;else right=true;}
+            if(blocks[currentblock][direction][j][i]!=0&&(array[i+blockx][j+blocky].block||i+blockx>9||i+blockx<0)){if(i<2)left=true;else right=true;}
             }
     while(left&&!right){
         left=false;right=false;
         blockx++;
         for(unsigned char i=0;i<4;i++)for(unsigned char j=0;j<4;j++){
-            if(blocks[currentblock][direction][j][i]!=0&&(array[i+blockx][j+blocky]!=0||i+blockx>9||i+blockx<0)){if(i<2)left=true;else right=true;}
+            if(blocks[currentblock][direction][j][i]!=0&&(array[i+blockx][j+blocky].block||i+blockx>9||i+blockx<0)){if(i<2)left=true;else right=true;}
             }
     }
     while(!left&&right){
         left=false;right=false;
         blockx--;
         for(unsigned char i=0;i<4;i++)for(unsigned char j=0;j<4;j++){
-            if(blocks[currentblock][direction][j][i]!=0&&(array[i+blockx][j+blocky]!=0||i+blockx>9||i+blockx<0)){if(i<2)left=true;else right=true;}
+            if(blocks[currentblock][direction][j][i]!=0&&(array[i+blockx][j+blocky].block||i+blockx>9||i+blockx<0)){if(i<2)left=true;else right=true;}
             }
     }
     return left&&right;
@@ -208,7 +213,7 @@ public:
                 triangles[4].position = sf::Vector2f(420+(i + 1) * tileSize.x, j * tileSize.y);
                 triangles[5].position = sf::Vector2f(420+(i + 1) * tileSize.x, (j + 1) * tileSize.y);
 
-                for(unsigned char k=0;k<6;k++)triangles[k].color = CGAcolor(array[i][j]);
+                for(unsigned char k=0;k<6;k++)triangles[k].color = array[i][j].color;
             }
         }
 
@@ -254,7 +259,7 @@ public:
                 triangles[4].position = sf::Vector2f(54+(i + 1) * tileSize.x, 54+j * tileSize.y);
                 triangles[5].position = sf::Vector2f(54+(i + 1) * tileSize.x, 54+(j + 1) * tileSize.y);
 
-                for(unsigned char k=0;k<6;k++)triangles[k].color = CGAcolor(holdblock==255?0:(blocks[holdblock][0][i][j]));
+                for(unsigned char k=0;k<6;k++)triangles[k].color = (holdblock==255||(blocks[holdblock][0][j][i]==0))?sf::Color::Black:holdcolor;
             }
         }
 
@@ -305,6 +310,13 @@ int main()
     window.setFramerateLimit(60);
     TileMap tiles;
     Holdwindow holdtile;
+    std::uniform_int_distribution<int> dis(0, 2);
+
+    switch(dis(gen)){
+                case 0:{currentcolor=sf::Color::Red;break;}
+                case 1:{currentcolor=sf::Color::Blue;break;}
+                case 2:{currentcolor=sf::Color::Green;break;}
+            }
 
     auto resized = window.getSize();
     float tempx,tempy;
@@ -331,7 +343,7 @@ int main()
 
         for(unsigned char i=0;i<20;i++){
             unsigned char linecheck=0;
-            for(unsigned char j=0;j<10;j++){if(array[j][i]!=0)linecheck++;}
+            for(unsigned char j=0;j<10;j++){if(array[j][i].block)linecheck++;}
             if(linecheck==10){
                 for(unsigned char j=i;j>0;j--){
                     for(unsigned char k=0;k<10;k++)array[k][j]=array[k][j-1];
@@ -370,6 +382,7 @@ int main()
             holdkeydone=true;
             if(holdblock==255){
                 holdblock=currentblock;
+                holdcolor=currentcolor;
                 if(currentblocknum>5){currentblocknum=0;std::shuffle(std::begin(blocklist), std::end(blocklist),std::mt19937(std::random_device()()));}
                 else currentblocknum++;
                 currentblock=blocklist[currentblocknum];
@@ -378,6 +391,9 @@ int main()
                 unsigned char temp=currentblock;
                 currentblock=holdblock;
                 holdblock=temp;
+                sf::Color colortemp=currentcolor;
+                currentcolor=holdcolor;
+                holdcolor=colortemp;
             }
             blocky=0;
             blockfallwait=blockfallframes;
@@ -392,7 +408,7 @@ int main()
                 }
             }
         for(unsigned char i=0;i<4;i++)for(unsigned char j=0;j<4;j++){
-            if(blocks[currentblock][direction][j][i]!=0)array[i+blockx][j+blocky]=blocks[currentblock][direction][j][i];
+            if(blocks[currentblock][direction][j][i]!=0){array[i+blockx][j+blocky].block=(blocks[currentblock][direction][j][i]!=0);array[i+blockx][j+blocky].color=currentcolor;}
             }
             
 
@@ -400,7 +416,7 @@ int main()
         holdtile.load();
 
         sf::RectangleShape rect({1920.f, 1080.f});
-        rect.setFillColor(CGAcolor(8));
+        rect.setFillColor(sf::Color(85,85,85));
 
         window.clear();
         window.draw(rect);
@@ -408,11 +424,16 @@ int main()
         window.draw(holdtile);
         window.display();
 
-        if(check){for(unsigned char i=0;i<4;i++)for(unsigned char j=0;j<4;j++)if(blocks[currentblock][direction][j][i]!=0)array[i+blockx][j+blocky]=0;}
+        if(check){for(unsigned char i=0;i<4;i++)for(unsigned char j=0;j<4;j++)if(blocks[currentblock][direction][j][i]!=0){array[i+blockx][j+blocky].block=false;array[i+blockx][j+blocky].color=sf::Color::Black;}}
         else {
             holdkeydone=false;
             blocky=0;
             blockfallwait=blockfallframes;
+            switch(dis(gen)){
+                case 0:{currentcolor=sf::Color::Red;break;}
+                case 1:{currentcolor=sf::Color::Blue;break;}
+                case 2:{currentcolor=sf::Color::Green;break;}
+            }
             if(currentblocknum>5){currentblocknum=0;std::shuffle(std::begin(blocklist), std::end(blocklist),std::mt19937(std::random_device()()));}
             else currentblocknum++;
             currentblock=blocklist[currentblocknum];
