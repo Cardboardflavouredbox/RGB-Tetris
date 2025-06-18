@@ -426,6 +426,17 @@ int main()
 
         if(check){for(unsigned char i=0;i<4;i++)for(unsigned char j=0;j<4;j++)if(blocks[currentblock][direction][j][i]!=0){array[i+blockx][j+blocky].block=false;array[i+blockx][j+blocky].color=sf::Color::Black;}}
         else {
+            for(short i=-1;i<5;i++){
+                for(short j=-1;j<5;j++){
+                    if((i+blockx>=0&&i+blockx<10&&j+blocky>=0&&j+blocky<20)&&(array[i+blockx][j+blocky].block)&&(j>4||i>4||i<0||j<0||blocks[currentblock][direction][j][i]==0)
+                    &&((j>0&&i<4&&i>-1&&blocks[currentblock][direction][j-1][i]!=0)||(i>0&&j<4&&j>-1&&blocks[currentblock][direction][j][i-1]!=0)||(i<3&&j<4&&j>-1&&blocks[currentblock][direction][j][i+1]!=0)))
+                    {
+                    if(currentcolor.r==255)array[i+blockx][j+blocky].color.r+=255;
+                    else if(currentcolor.g==255)array[i+blockx][j+blocky].color.g+=255;
+                    else if(currentcolor.b==255)array[i+blockx][j+blocky].color.b+=255;
+                    }
+                }
+            }
             holdkeydone=false;
             blocky=0;
             blockfallwait=blockfallframes;
