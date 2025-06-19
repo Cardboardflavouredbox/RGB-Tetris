@@ -361,17 +361,37 @@ int main()
     {
         windowset(window,&gamequit);
 
-
+        unsigned char lineclearcount=0;
+        short lineclearscore=0;
         for(unsigned char i=0;i<20;i++){
             unsigned char linecheck=0;
-            for(unsigned char j=0;j<10;j++){if(array[j][i].block)linecheck++;}
+            short linescore=0;
+            for(unsigned char j=0;j<10;j++){
+                if(array[j][i].block){
+                    linecheck++;
+                    if(array[j][i].color==sf::Color::Red||array[j][i].color==sf::Color::Green||array[j][i].color==sf::Color::Blue)linescore+=10;
+                    else if(array[j][i].color==sf::Color::White)linescore+=50;
+                    else linescore+=20;
+                }
+                else break;
+                }
             if(linecheck==10){
+                lineclearcount++;
                 linecount++;
+                lineclearscore+=linescore;
                 for(unsigned char j=i;j>0;j--){
                     for(unsigned char k=0;k<10;k++)array[k][j]=array[k][j-1];
                 }
             }
         }
+        float temp=0;
+        switch(lineclearcount){
+            case 1:{temp=1.f;break;}
+            case 2:{temp=1.5f;break;}
+            case 3:{temp=5.f/3.f;break;}
+            case 4:{temp=2.f;break;}
+        }
+        score+=short(float(lineclearscore)*temp);
         if(linecount>9){level+=linecount/10;linecount%=10;if(level>15)level=15;}
         falltime+=speedlist[level-1];
         keypresscheck(sf::Keyboard::Key::Q,&leftturn);
@@ -383,10 +403,12 @@ int main()
         keypresscheck(sf::Keyboard::Key::R,&holdkey);
 
         if(leftturn=='2'){
+            falltime=0;
             direction--;if(direction<0)direction=3;
             if(turncheck()){direction++;if(direction>3)direction=0;}
             }
         else if(rightturn=='2'){
+            falltime=0;
             direction++;if(direction>3)direction=0;
             if(turncheck()){direction--;if(direction<0)direction=3;}
             }
@@ -394,14 +416,15 @@ int main()
         if(leftkey=='2'){blockx--;if(overlapcheck())blockx++;}
         if(rightkey=='2'){blockx++;if(overlapcheck())blockx--;}
         bool tempcheck=true;
-        dropy=0;
+        dropy=blocky;
         while(tempcheck){tempcheck=checkthing(dropy);if(tempcheck)dropy++;}
         bool check=true;
         if(upkey=='2'){
+            score+=2*(dropy-blocky);
             blocky=dropy;
             check=false;
         }
-        if(downkey=='1'||falltime>=1.f){check=checkthing(blocky);if(check)blocky++;if(falltime>=1.f)falltime-=1.f;}
+        if(downkey=='1'||falltime>=1.f){check=checkthing(blocky);if(check)blocky++;if(downkey=='1')score++;if(falltime>=1.f)falltime-=1.f;}
         if(holdkey=='2'&&!holdkeydone){
             holdkeydone=true;
             if(holdblock==255){
