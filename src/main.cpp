@@ -15,7 +15,7 @@ struct blockclass{
 bool screenfocused=true;
 blockclass array[10][20]={};
 sf::Color currentcolor,holdcolor;
-unsigned char currentblock=0,blocklist[7]={0,1,2,3,4,5,6},currentblocknum=0,holdblock=255,
+unsigned char currentblock=0,blocklist[7]={0,1,2,3,4,5,6},currentblocknum=0,holdblock=255,level=1,linecount=0,
     blocks[7][4][4][4]={
         {
         {
@@ -144,17 +144,34 @@ unsigned char currentblock=0,blocklist[7]={0,1,2,3,4,5,6},currentblocknum=0,hold
         {12,0,0}},
         }
     };
-short direction=0,blockx=0,blocky=0,blockfallwait=45,blockfallframes=45;
+short direction=0,blockx=0,blocky=0,dropy=0,score=0;
+float falltime=0,speedlist[15]={
+    0.01667,
+    0.021017,
+    0.026977,
+    0.035256,
+    0.04693,
+    0.06361,
+    0.0879,
+    0.1236,
+    0.1775,
+    0.2598,
+    0.388,
+    0.59,
+    0.92,
+    1.46,
+    2.36,
+};
 
 void keypresscheck(sf::Keyboard::Key keycode,char *key){
     if(screenfocused&&sf::Keyboard::isKeyPressed(keycode)){if(*key=='0')*key='2';else if(*key=='2')*key='1';}else *key='0';
 }
 
-bool checkthing(){
+bool checkthing(short y){
     for(unsigned char i=0;i<4;i++)for(unsigned char j=0;j<4;j++){
                 if(blocks[currentblock][direction][j][i]!=0){
-                if(j+blocky>18)return false;
-                if(array[i+blockx][j+blocky+1].block)return false;}
+                if(j+y>18)return false;
+                if(array[i+blockx][j+y+1].block)return false;}
             }
     return true;
 }
@@ -311,6 +328,10 @@ int main()
     TileMap tiles;
     Holdwindow holdtile;
     std::uniform_int_distribution<int> dis(0, 2);
+    sf::Font font("Monocat_6x12.ttf");
+    sf::Text Scoretext(font);
+    Scoretext.setCharacterSize(72);
+    Scoretext.setPosition({1000,160});
 
     switch(dis(gen)){
                 case 0:{currentcolor=sf::Color::Red;break;}
@@ -345,12 +366,14 @@ int main()
             unsigned char linecheck=0;
             for(unsigned char j=0;j<10;j++){if(array[j][i].block)linecheck++;}
             if(linecheck==10){
+                linecount++;
                 for(unsigned char j=i;j>0;j--){
                     for(unsigned char k=0;k<10;k++)array[k][j]=array[k][j-1];
                 }
             }
         }
-        blockfallwait--;
+        if(linecount>9){level+=linecount/10;linecount%=10;if(level>15)level=15;}
+        falltime+=speedlist[level-1];
         keypresscheck(sf::Keyboard::Key::Q,&leftturn);
         keypresscheck(sf::Keyboard::Key::E,&rightturn);
         keypresscheck(sf::Keyboard::Key::A,&leftkey);
@@ -370,14 +393,15 @@ int main()
         
         if(leftkey=='2'){blockx--;if(overlapcheck())blockx++;}
         if(rightkey=='2'){blockx++;if(overlapcheck())blockx--;}
+        bool tempcheck=true;
+        dropy=0;
+        while(tempcheck){tempcheck=checkthing(dropy);if(tempcheck)dropy++;}
         bool check=true;
         if(upkey=='2'){
-            while(check){
-                check=checkthing();
-                if(check)blocky++;
-                }
-            }
-        if(downkey=='1'||blockfallwait==0){check=checkthing();if(check)blocky++;if(blockfallwait==0)blockfallwait=blockfallframes;}
+            blocky=dropy;
+            check=false;
+        }
+        if(downkey=='1'||falltime>=1.f){check=checkthing(blocky);if(check)blocky++;if(falltime>=1.f)falltime-=1.f;}
         if(holdkey=='2'&&!holdkeydone){
             holdkeydone=true;
             if(holdblock==255){
@@ -396,7 +420,10 @@ int main()
                 holdcolor=colortemp;
             }
             blocky=0;
-            blockfallwait=blockfallframes;
+            falltime=0;
+            bool tempcheck=true;
+            dropy=0;
+            while(tempcheck){tempcheck=checkthing(dropy);if(tempcheck)dropy++;}
         }
 
         for(unsigned char i=0;i<4;i++)for(unsigned char j=0;j<4;j++){
@@ -408,10 +435,13 @@ int main()
                 }
             }
         for(unsigned char i=0;i<4;i++)for(unsigned char j=0;j<4;j++){
-            if(blocks[currentblock][direction][j][i]!=0){array[i+blockx][j+blocky].block=(blocks[currentblock][direction][j][i]!=0);array[i+blockx][j+blocky].color=currentcolor;}
+            if(blocks[currentblock][direction][j][i]!=0){
+                array[i+blockx][j+dropy].block=(blocks[currentblock][direction][j][i]!=0);array[i+blockx][j+dropy].color=sf::Color(currentcolor.r/2,currentcolor.g/2,currentcolor.b/2);
+                array[i+blockx][j+blocky].block=(blocks[currentblock][direction][j][i]!=0);array[i+blockx][j+blocky].color=currentcolor;
+                }
             }
             
-
+        Scoretext.setString("Score: "+std::to_string(score)+'\n'+"Level: "+std::to_string(level));
         tiles.load();
         holdtile.load();
 
@@ -422,9 +452,10 @@ int main()
         window.draw(rect);
         window.draw(tiles);
         window.draw(holdtile);
+        window.draw(Scoretext);
         window.display();
 
-        if(check){for(unsigned char i=0;i<4;i++)for(unsigned char j=0;j<4;j++)if(blocks[currentblock][direction][j][i]!=0){array[i+blockx][j+blocky].block=false;array[i+blockx][j+blocky].color=sf::Color::Black;}}
+        if(check){for(unsigned char i=0;i<4;i++)for(unsigned char j=0;j<4;j++)if(blocks[currentblock][direction][j][i]!=0){array[i+blockx][j+dropy].block=false;array[i+blockx][j+dropy].color=sf::Color::Black;array[i+blockx][j+blocky].block=false;array[i+blockx][j+blocky].color=sf::Color::Black;}}
         else {
             for(short i=-1;i<5;i++){
                 for(short j=-1;j<5;j++){
@@ -439,12 +470,13 @@ int main()
             }
             holdkeydone=false;
             blocky=0;
-            blockfallwait=blockfallframes;
+            falltime=0;
             switch(dis(gen)){
                 case 0:{currentcolor=sf::Color::Red;break;}
                 case 1:{currentcolor=sf::Color::Blue;break;}
                 case 2:{currentcolor=sf::Color::Green;break;}
             }
+            if(overlapcheck()){gamequit=true;window.close();}
             if(currentblocknum>5){currentblocknum=0;std::shuffle(std::begin(blocklist), std::end(blocklist),std::mt19937(std::random_device()()));}
             else currentblocknum++;
             currentblock=blocklist[currentblocknum];
