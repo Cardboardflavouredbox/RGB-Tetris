@@ -364,6 +364,7 @@ int main()
         unsigned char lineclearcount=0;
         short lineclearscore=0;
         bool whitearray[10]={};
+        
         for(unsigned char i=0;i<20;i++){
             unsigned char linecheck=0;
             short linescore=0;
@@ -371,7 +372,7 @@ int main()
                 if(array[j][i].block){
                     linecheck++;
                     if(array[j][i].color==sf::Color::Red||array[j][i].color==sf::Color::Green||array[j][i].color==sf::Color::Blue)linescore+=10;
-                    else if(array[j][i].color==sf::Color::White){linescore+=50;whitearray[j]=true;}
+                    else if(array[j][i].color==sf::Color::White)linescore+=50;
                     else linescore+=20;
                 }
                 else break;
@@ -382,6 +383,7 @@ int main()
                 lineclearscore+=linescore;
                 for(unsigned char j=i;j>0;j--){
                     for(unsigned char k=0;k<10;k++){
+                    if(array[k][j].color==sf::Color::White&&j==i)whitearray[k]=true;
                     if(!whitearray[k])array[k][j]=array[k][j-1];
                     }
                 }
