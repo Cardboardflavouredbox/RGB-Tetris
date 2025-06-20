@@ -323,7 +323,7 @@ int main()
 {
     char upkey='0',leftkey='0',downkey='0',rightkey='0',rightturn='0',leftturn='0',holdkey='0';
     bool gamequit=false,holdkeydone=false;
-    auto window = sf::RenderWindow(sf::VideoMode({1470, 956}), "Tetris wow");
+    auto window = sf::RenderWindow(sf::VideoMode({1470, 956}), "RGB Tetris");
     window.setFramerateLimit(60);
     TileMap tiles;
     Holdwindow holdtile;
@@ -363,6 +363,7 @@ int main()
 
         unsigned char lineclearcount=0;
         short lineclearscore=0;
+        bool whitearray[10]={};
         for(unsigned char i=0;i<20;i++){
             unsigned char linecheck=0;
             short linescore=0;
@@ -370,7 +371,7 @@ int main()
                 if(array[j][i].block){
                     linecheck++;
                     if(array[j][i].color==sf::Color::Red||array[j][i].color==sf::Color::Green||array[j][i].color==sf::Color::Blue)linescore+=10;
-                    else if(array[j][i].color==sf::Color::White)linescore+=50;
+                    else if(array[j][i].color==sf::Color::White){linescore+=50;whitearray[j]=true;}
                     else linescore+=20;
                 }
                 else break;
@@ -380,7 +381,9 @@ int main()
                 linecount++;
                 lineclearscore+=linescore;
                 for(unsigned char j=i;j>0;j--){
-                    for(unsigned char k=0;k<10;k++)array[k][j]=array[k][j-1];
+                    for(unsigned char k=0;k<10;k++){
+                    if(!whitearray[k])array[k][j]=array[k][j-1];
+                    }
                 }
             }
         }
@@ -485,9 +488,9 @@ int main()
                     if((i+blockx>=0&&i+blockx<10&&j+blocky>=0&&j+blocky<20)&&(array[i+blockx][j+blocky].block)&&(j>4||i>4||i<0||j<0||blocks[currentblock][direction][j][i]==0)
                     &&((j>0&&i<4&&i>-1&&blocks[currentblock][direction][j-1][i]!=0)||(i>0&&j<4&&j>-1&&blocks[currentblock][direction][j][i-1]!=0)||(i<3&&j<4&&j>-1&&blocks[currentblock][direction][j][i+1]!=0)))
                     {
-                    if(currentcolor.r==255)array[i+blockx][j+blocky].color.r+=255;
-                    else if(currentcolor.g==255)array[i+blockx][j+blocky].color.g+=255;
-                    else if(currentcolor.b==255)array[i+blockx][j+blocky].color.b+=255;
+                    if(currentcolor.r==255&&array[i+blockx][j+blocky].color.r==0)array[i+blockx][j+blocky].color.r+=255;
+                    else if(currentcolor.g==255&&array[i+blockx][j+blocky].color.g==0)array[i+blockx][j+blocky].color.g+=255;
+                    else if(currentcolor.b==255&&array[i+blockx][j+blocky].color.b==0)array[i+blockx][j+blocky].color.b+=255;
                     }
                 }
             }
